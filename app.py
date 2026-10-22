@@ -1,4 +1,5 @@
 
+import feedparser
 import streamlit as st
 
 st.set_page_config(
@@ -10,17 +11,42 @@ st.set_page_config(
 st.title("📰 Země zprávy")
 st.caption("České zpravodajství v kontextu.")
 
-st.subheader("Přehled médií")
+SOURCES = {
+    "ČT24": "https://ct24.ceskatelevize.cz/rss/hlavni-zpravy",
+    "iROZHLAS": "https://www.irozhlas.cz/rss/irozhlas",
+    "Seznam Zprávy": "https://www.seznamzpravy.cz/rss",
+    "Novinky.cz": "https://www.novinky.cz/rss",
+    "Aktuálně.cz": "https://www.aktualne.cz/rss",
+    "iDNES.cz": "https://servis.idnes.cz/rss.aspx?c=zpravodaj",
+}
 
-media = [
-    "ČT24",
-    "iROZHLAS",
-    "Seznam Zprávy",
-    "Deník N",
-    "iDNES.cz",
-]
 
-for name in media:
-    st.write(f"🗞️ {name}")
+articles = []
 
-st.info("Zatím testovací verze — další krok bude načítání aktuálních zpráv.")
+for source_name, rss_url in SOURCES.items():
+    feed = feedparser.parse(rss_url)
+
+    if feed.bozo and not feed.entries:
+        st.warning(f"Nepodařilo se načíst {source_name}.")
+        continue
+
+    for entry in feed.entries[:20]:
+        articles.append({
+            "source": source_name,
+            "title": entry.get("title", "Bez titulku"),
+            "link": entry.get("link", ""),
+            "published": entry.get("published_parsed"),
+        })
+
+
+articles.sort(
+    key=lambda article: article["published"] or (0, 0, 0, 0, 0, 0),
+    reverse=True,
+)
+
+st.subheader("Nejnovější zprávy")
+
+for article in articles:
+    st.markdown(f"**[{article['title']}]({article['link']})**")
+    st.caption(article["source"])
+    st.divider()
