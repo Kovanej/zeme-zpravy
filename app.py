@@ -35,9 +35,9 @@ for source_name, rss_url in SOURCES.items():
             "source": source_name,
             "title": entry.get("title", "Bez titulku"),
             "link": entry.get("link", ""),
+            "summary": entry.get("summary", ""),
             "published": entry.get("published_parsed"),
         })
-
 
 articles.sort(
     key=lambda article: article["published"] or (0, 0, 0, 0, 0, 0),
@@ -46,7 +46,34 @@ articles.sort(
 
 st.subheader("Nejnovější zprávy")
 
+
+selected_sources = st.multiselect(
+    "Zobrazit média",
+    options=list(SOURCES.keys()),
+    default=list(SOURCES.keys()),
+)
+
+articles = [
+    article for article in articles
+    if article["source"] in selected_sources
+]
+
 for article in articles:
-    st.markdown(f"**[{article['title']}]({article['link']})**")
-    st.caption(article["source"])
-    st.divider()
+
+    with st.container(border=True):
+
+        st.markdown(f"### [{article['title']}]({article['link']})")
+
+        st.caption(article["source"])
+
+        if article["published"]:
+            import time
+
+            published = time.strftime(
+                "%d.%m.%Y %H:%M",
+                article["published"],
+            )
+            st.caption(published)
+
+        if article["summary"]:
+            st.write(article["summary"], unsafe_allow_html=False)
